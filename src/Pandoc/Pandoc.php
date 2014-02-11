@@ -34,59 +34,73 @@ class Pandoc
      * @var array
      */
     private $inputFormats = array(
-        "native",
+        "docbook",
+        "html",
         "json",
+        "latex",
         "markdown",
-        "markdown_strict",
-        "markdown_phpextra",
         "markdown_github",
         "markdown_mmd",
-        "rst",
+        "markdown_phpextra",
+        "markdown_strict",
         "mediawiki",
-        "docbook",
-        "textile",
-        "html",
-        "latex"
+        "native",
+        "rst",
+        "textile"
     );
 
     /**
-     * List of valid output types
+     * List of valid string output types
      * @var array
      */
-    private $outputFormats = array(
-        "native",
-        "json",
-        "docx",
-        "odt",
-        "epub",
-        "epub3",
+    private $stringOutputFormats = array(
+        "asciidoc",
+        "beamer",
+        "context",
+        "docbook",
+        "dzslides",
         "fb2",
         "html",
         "html5",
-        "s5",
-        "slidy",
-        "slideous",
-        "dzslides",
-        "docbook",
-        "opendocument",
+        "json",
         "latex",
-        "beamer",
-        "context",
-        "texinfo",
         "man",
         "markdown",
-        "markdown_strict",
-        "markdown_phpextra",
         "markdown_github",
         "markdown_mmd",
+        "markdown_phpextra",
+        "markdown_strict",
+        "mediawiki",
+        "native",
+        "opendocument",
+        "org",
         "plain",
         "rst",
-        "mediawiki",
-        "textile",
         "rtf",
-        "org",
-        "asciidoc"
+        "s5",
+        "slideous",
+        "slidy",
+        "texinfo",
+        "textile"
     );
+
+	/**
+	 * List of valid binary output formats
+	 * @var array
+	 */
+	private $binaryOutputFormats = array(
+		"docx",
+		"epub",
+		"epub3",
+		"odt",
+		"pdf"
+	);
+
+	/**
+	 * List of all valid output formats
+	 * @var array
+	 */
+	private $outputFormats = array();
 
     /**
      * Setup path to the pandoc binary
@@ -98,6 +112,8 @@ class Pandoc
         $this->tmpFile = sprintf(
             "%s/%s", sys_get_temp_dir(), uniqid("pandoc")
         );
+
+		$this->outputFormats = array_merge($this->stringOutputFormats, $this->binaryOutputFormats);
 
         // Since we can not validate that the command that they give us is
         // *really* pandoc we will just check that its something.
@@ -128,31 +144,10 @@ class Pandoc
      */
     public function convert($content, $from, $to)
     {
-        if ( ! in_array($from, $this->inputFormats)) {
-            throw new PandocException(
-                sprintf('%s is not a valid input format for pandoc', $to)
-            );
-        }
+		$options = compact('from', 'to');
+		$this->validateConversion($options);
 
-        if ( ! in_array($to, $this->outputFormats)) {
-            throw new PandocException(
-                sprintf('%s is not a valid output format for pandoc', $to)
-            );
-        }
-
-        file_put_contents($this->tmpFile, $content);
-
-        $command = sprintf(
-            '%s --from=%s --to=%s %s',
-            $this->executable,
-            $from,
-            $to,
-            $this->tmpFile
-        );
-
-        exec($command, $output);
-
-        return implode("\n", $output);
+		return $this->runWith($content, $options);
     }
 
     /**
@@ -170,12 +165,14 @@ class Pandoc
      */
     public function runWith($content, $options)
     {
+		$this->validateConversion($options);
+
         $commandOptions = array();
         foreach ($options as $key => $value) {
-            if ($key == 'to' && $value == 'pdf') {
-                $commandOptions[] = '-o '.$this->tmpFile.'.pdf';
-                continue;
+            if ($key == 'to' && in_array($value, $this->binaryOutputFormats)) {
+                $commandOptions[] = '-o '.$this->tmpFile;
             }
+
             if (null === $value) {
                 $commandOptions[] = "--$key";
                 continue;
@@ -194,9 +191,9 @@ class Pandoc
         );
 
         exec($command, $output);
-        
-        if ($options['to'] == 'pdf') {
-            return file_get_contents($this->tmpFile.'.pdf');
+
+        if (in_array($options['to'], $this->binaryOutputFormats)) {
+            return file_get_contents($this->tmpFile);
         } else {
             return implode("\n", $output);
         }
@@ -209,10 +206,6 @@ class Pandoc
     {
         if (file_exists($this->tmpFile)) {
             @unlink($this->tmpFile);
-        }
-
-        if (file_exists($this->tmpFile.'.pdf')) {
-            @unlink($this->tmpFile.'.pdf');
         }
     }
 
@@ -227,4 +220,29 @@ class Pandoc
 
         return trim(str_replace('pandoc', '', $output[0]));
     }
+
+	/**
+	 * Throws an error if 'from' or 'to' formats are unrecognized
+	 *
+	 * @access private
+	 * @param array $options The options to be validated
+	 * @return void
+	 */
+	private function validateConversion($options)
+	{
+		$from = $options['from'];
+		$to = $options['to'];
+
+        if ( ! in_array($from, $this->inputFormats)) {
+            throw new PandocException(
+                sprintf('%s is not a valid input format for pandoc', $from)
+            );
+        }
+
+        if ( ! in_array($to, $this->outputFormats)) {
+            throw new PandocException(
+                sprintf('%s is not a valid output format for pandoc', $to)
+            );
+        }
+	}
 }

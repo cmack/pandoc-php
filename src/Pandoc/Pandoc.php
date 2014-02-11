@@ -84,23 +84,23 @@ class Pandoc
         "textile"
     );
 
-	/**
-	 * List of valid binary output formats
-	 * @var array
-	 */
-	private $binaryOutputFormats = array(
-		"docx",
-		"epub",
-		"epub3",
-		"odt",
-		"pdf"
-	);
+    /**
+     * List of valid binary output formats
+     * @var array
+     */
+    private $binaryOutputFormats = array(
+        "docx",
+        "epub",
+        "epub3",
+        "odt",
+        "pdf"
+    );
 
-	/**
-	 * List of all valid output formats
-	 * @var array
-	 */
-	private $outputFormats = array();
+    /**
+     * List of all valid output formats
+     * @var array
+     */
+    private $outputFormats = array();
 
     /**
      * Setup path to the pandoc binary
@@ -113,7 +113,7 @@ class Pandoc
             "%s/%s", sys_get_temp_dir(), uniqid("pandoc")
         );
 
-		$this->outputFormats = array_merge($this->stringOutputFormats, $this->binaryOutputFormats);
+        $this->outputFormats = array_merge($this->stringOutputFormats, $this->binaryOutputFormats);
 
         // Since we can not validate that the command that they give us is
         // *really* pandoc we will just check that its something.
@@ -144,10 +144,10 @@ class Pandoc
      */
     public function convert($content, $from, $to)
     {
-		$options = compact('from', 'to');
-		$this->validateConversion($options);
+        $options = compact('from', 'to');
+        $this->validateConversion($options);
 
-		return $this->runWith($content, $options);
+        return $this->runWith($content, $options);
     }
 
     /**
@@ -165,7 +165,7 @@ class Pandoc
      */
     public function runWith($content, $options)
     {
-		$this->validateConversion($options);
+        $this->validateConversion($options);
 
         $commandOptions = array();
         foreach ($options as $key => $value) {
@@ -221,17 +221,17 @@ class Pandoc
         return trim(str_replace('pandoc', '', $output[0]));
     }
 
-	/**
-	 * Throws an error if 'from' or 'to' formats are unrecognized
-	 *
-	 * @access private
-	 * @param array $options The options to be validated
-	 * @return void
-	 */
-	private function validateConversion($options)
-	{
-		$from = $options['from'];
-		$to = $options['to'];
+    /**
+     * Throws an error if 'from' or 'to' formats are unrecognized
+     *
+     * @access private
+     * @param array $options The options to be validated
+     * @return void
+     */
+    private function validateConversion($options)
+    {
+        $from = $options['from'];
+        $to = $options['to'];
 
         if ( ! in_array($from, $this->inputFormats)) {
             throw new PandocException(
@@ -244,5 +244,5 @@ class Pandoc
                 sprintf('%s is not a valid output format for pandoc', $to)
             );
         }
-	}
+    }
 }

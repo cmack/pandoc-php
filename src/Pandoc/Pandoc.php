@@ -221,6 +221,16 @@ class Pandoc
         return trim(str_replace('pandoc', '', $output[0]));
     }
 
+	/**
+	 * Returns the path to the output file
+	 *
+	 * @return string Path to output file
+	 */
+	public function getOutputFile()
+	{
+		return $this->tmpFile;
+	}
+
     /**
      * Throws an error if 'from' or 'to' formats are unrecognized
      *
